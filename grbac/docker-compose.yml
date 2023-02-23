@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  mysql:
+    image: "mysql:5.7.22"
+    ports:
+      - "3399:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "grbac_vue"
+      MYSQL_DATABASE: "db_grbac"
+      MYSQL_PASSWORD: "grbac_vue"
+    volumes:
+      - ./storage/database:/var/lib/mysql/
+
+  redis:
+    image: redis:6.2.8
+    restart: always
+    ports:
+      - "6399:6379"
+    volumes:
+      - ./storage/dbcache:/data

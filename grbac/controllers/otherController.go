@@ -8,7 +8,7 @@ import (
 
 // Health 健康检查，成功返回 "Success"
 func CheckHealth(c *gin.Context) {
-	c.String(http.StatusOK, "Success")
+	c.JSON(http.StatusOK, gin.H{"msg": "Success"})
 }
 
 // SendGoMail 发送邮件

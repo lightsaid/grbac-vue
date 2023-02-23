@@ -3,14 +3,23 @@ package routers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/lightsaid/grbac/controllers"
+	"github.com/lightsaid/grbac/middleware"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func InitRoutes(engine *gin.Engine) {
+func SetupRoutes(engine *gin.Engine) {
+	// 中间件设置
+	engine.Use(middleware.Translation())
+
 	// 健康检查路由
 	engine.GET("/v1/api/health", controllers.CheckHealth)
 
 	// 发送邮件
 	engine.POST("/v1/api/sendemail", controllers.SendGoMail)
+
+	// 注册Swagger文档路由
+	engine.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// auth 认证相关路由
 	auth := engine.Group("/v1/api/auth")
@@ -27,5 +36,4 @@ func InitRoutes(engine *gin.Engine) {
 	admin.GET("/users/profile", controllers.GetProfile)        // 获取自己个人信息
 	admin.GET("/users/list", controllers.ListUsers)            // 获取用户列表 /users/list?page=1&size=10
 	admin.PUT("/users/update/:uid", controllers.UpdateProfile) // 更新用户信息
-
 }

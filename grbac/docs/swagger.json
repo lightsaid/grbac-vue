@@ -1,0 +1,13 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "这是一个RBAC权限管理系统接口文档，访问地址是: localhost:9999/docs/swagger/index.html",
+        "title": "权限管理系统",
+        "termsOfService": "https://github.com/lightsaid/grbac-vue",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:9999",
+    "basePath": "/v1/api",
+    "paths": {}
+}
