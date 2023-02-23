@@ -1,7 +1,10 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": "grbac"
+		},
+		{
+			"path": "vueet"
 		}
 	]
 }
