@@ -24,17 +24,18 @@ import (
 // @BasePath /v1/api
 func main() {
 	var err error
-	initializer.InitConfig(".env")
+	initializer.NewAppConfig(".")
 	initializer.InitMySQL()
 	err = initializer.AutoMigrate()
 	failOnError(err, "initializer.AutoMigrate()")
 	err = initializer.InitValidator()
 	failOnError(err, "initializer.InitValidator()")
+	gin.SetMode(initializer.App.Conf.RunMode)
 	engine := gin.Default()
 	routers.SetupRoutes(engine)
 
 	server := http.Server{
-		Addr:           os.Getenv("ADDRESS"),
+		Addr:           initializer.App.Conf.HTTPServerAddress,
 		Handler:        engine,
 		IdleTimeout:    time.Minute,
 		ReadTimeout:    10 * time.Second,
@@ -44,7 +45,7 @@ func main() {
 
 	// 启动服务监听
 	go func() {
-		log.Println("Starting server on ", os.Getenv("ADDRESS"))
+		log.Println("Starting server on ", initializer.App.Conf.HTTPServerAddress)
 		if err := server.ListenAndServe(); err != nil {
 			log.Println("ListenAndServe: ", err)
 		}
@@ -64,9 +65,7 @@ func main() {
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatal("Shutdown server error: ", err)
 	}
-
 	log.Println("Stopped server.")
-
 }
 
 // failOnError 打印错误，终止程序

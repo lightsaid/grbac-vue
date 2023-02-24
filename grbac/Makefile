@@ -6,8 +6,8 @@ up:
 down:
 	docker-compose down
 
-## server: 启动服务
-server:
+## serve: 启动服务
+serve:
 	go run ./cmd/server/*.go
 
 ## doc: swag init

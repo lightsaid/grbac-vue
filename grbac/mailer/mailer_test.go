@@ -1,7 +1,6 @@
 package mailer
 
 import (
-	"os"
 	"testing"
 
 	"github.com/lightsaid/grbac/initializer"
@@ -9,8 +8,12 @@ import (
 )
 
 func TestSendEmail(t *testing.T) {
-	initializer.InitConfig("../.env")
-	sender := NewGmailSender(os.Getenv("EMAIL_SENDER_NAME"), os.Getenv("EMAIL_SENDER_ADDRESS"), os.Getenv("EMAIL_SENDER_PASSWORD"))
+	initializer.NewAppConfig("../")
+	sender := NewGmailSender(
+		initializer.App.Conf.MailSenderName,
+		initializer.App.Conf.MailSenderAddress,
+		initializer.App.Conf.MailSenderPassword,
+	)
 
 	subject := "Test Send Email"
 	content := `
@@ -18,7 +21,7 @@ func TestSendEmail(t *testing.T) {
 		<p>欢迎查看我的a href="https://github.com/lightsaid/grbac-vue">Github<</a></p>
 	`
 	// 测试发送到gmail和163
-	to := []string{os.Getenv("EMAIL_SENDER_ADDRESS"), os.Getenv("EMAIL_163_SENDER_ADDRESS")}
+	to := []string{initializer.App.Conf.MailSenderAddress, initializer.App.Conf.To163MailAddress}
 	attchFiles := []string{"../../README.md"}
 
 	err := sender.SendEmail(subject, content, to, nil, nil, attchFiles)

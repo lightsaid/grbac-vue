@@ -4,20 +4,58 @@ import (
 	"log"
 	"sync"
 
-	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
-var AppConf *appConfig
+var App *appConfig
 
+type config struct {
+	RunMode            string `mapstructure:"RUN_MODE"`             // HTTP Server 启动模式: debug | release
+	HTTPServerAddress  string `mapstructure:"HTTP_SERVER_ADDRESS"`  // HTTP Server IP地址+端口
+	MySQLDSN           string `mapstructure:"MYSQL_DSN"`            // 链接 MySQL 的 DSN
+	MailSenderName     string `mapstructure:"MAIL_SENDER_NAME"`     // 发送邮件人的名字，对方收到邮件会显示
+	MailSenderAddress  string `mapstructure:"MAIL_SENDER_ADDRESS"`  // 发送人邮件人的邮箱地址
+	MailSenderPassword string `mapstructure:"MAIL_SENDER_PASSWORD"` // 发送人邮件的应用专用密码
+	To163MailAddress   string `mapstructure:"TO_163_MAIL_ADDRESS"`  // 测试163邮箱接收邮件的邮箱地址
+}
+
+// appConfig 定义一个结构体保存全局配置
 type appConfig struct {
+	Conf *config
+
+	// 其他配置
 	Wait *sync.WaitGroup
 }
 
-// InitConfig 加载 .env 配置文件
-func InitConfig(path string) {
-	err := godotenv.Load(path)
+// NewAppConfig 加载 app.env 配置文件到 appConfig 结构体，定义其他配置
+// 得到一个全局的配置变量 App
+func NewAppConfig(path string) {
+	conf, err := loadConfig(path)
 	if err != nil {
-		log.Fatal("Error loading .env file: ", err)
+		log.Fatalf("Error loading app.env file %s", err)
 	}
 
+	wg := sync.WaitGroup{}
+
+	App = &appConfig{
+		Conf: &conf,
+		Wait: &wg,
+	}
+}
+
+// LoadConfig 从配置文件和环境读取配置参数
+func loadConfig(path string) (conf config, err error) {
+	viper.AddConfigPath(path)
+	viper.SetConfigName("app")
+	viper.SetConfigType("env")
+
+	viper.AutomaticEnv()
+
+	err = viper.ReadInConfig()
+	if err != nil {
+		return
+	}
+
+	err = viper.Unmarshal(&conf)
+	return
 }

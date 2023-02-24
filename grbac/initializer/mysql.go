@@ -27,9 +27,9 @@ func InitMySQL() {
 		},
 	)
 
-	DB, err = gorm.Open(mysql.Open(os.Getenv("DSN")), &gorm.Config{Logger: logConfig})
+	DB, err = gorm.Open(mysql.Open(App.Conf.MySQLDSN), &gorm.Config{Logger: logConfig})
 	if err != nil {
-		log.Fatal("连接 MySQL 数据库失败! ", err.Error())
+		log.Fatal("连接 MySQL 数据库失败 ", err.Error())
 	}
 }
 
