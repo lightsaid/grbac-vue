@@ -17,6 +17,7 @@ type config struct {
 	MailSenderAddress  string `mapstructure:"MAIL_SENDER_ADDRESS"`  // 发送人邮件人的邮箱地址
 	MailSenderPassword string `mapstructure:"MAIL_SENDER_PASSWORD"` // 发送人邮件的应用专用密码
 	To163MailAddress   string `mapstructure:"TO_163_MAIL_ADDRESS"`  // 测试163邮箱接收邮件的邮箱地址
+	RabbitMQURL        string `mapstructure:"RABBITMQ_URL"`
 }
 
 // appConfig 定义一个结构体保存全局配置

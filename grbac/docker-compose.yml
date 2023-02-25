@@ -19,3 +19,12 @@ services:
       - "6399:6379"
     volumes:
       - ./storage/dbcache:/data
+
+  rabbitmq:
+    image: "rabbitmq:3.11.9-management-alpine"
+    container_name: grbac_rabbitmq
+    ports:
+      - "5666:5672"
+      - "15666:15672"
+    volumes:
+      - ./storage/rabbitmq/:/var/lib/rabbitmq/
