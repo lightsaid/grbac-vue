@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/lightsaid/grbac/rabbitmq"
 	"github.com/spf13/viper"
 )
 
@@ -20,11 +21,14 @@ type config struct {
 	RabbitMQURL        string `mapstructure:"RABBITMQ_URL"`
 	ActivateEmailURL   string `mapstructure:"ACTIVATE_EMAIL_URL"`
 	SignatureSecret    string `mapstructure:"SIGNATURE_SECRET"`
+	RegisterExchange   string `mapstructure:"REGISTER_EXCHANGE"`
 }
 
 // appConfig 定义一个结构体保存全局配置
 type appConfig struct {
 	Conf *config
+
+	SubPubRabbitMQ *rabbitmq.RabbitMQ
 
 	// 其他配置
 	Wait *sync.WaitGroup
@@ -38,11 +42,17 @@ func NewAppConfig(path string) {
 		log.Fatalf("Error loading app.env file %s", err)
 	}
 
+	mq, err := rabbitmq.NewRabbitMQPubSub(conf.RegisterExchange, conf.RabbitMQURL)
+	if err != nil {
+		log.Fatal("rabbitmq.NewRabbitMQPubSub: ", err)
+	}
+
 	wg := sync.WaitGroup{}
 
 	App = &appConfig{
-		Conf: &conf,
-		Wait: &wg,
+		Conf:           &conf,
+		Wait:           &wg,
+		SubPubRabbitMQ: mq,
 	}
 }
 

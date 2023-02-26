@@ -59,8 +59,13 @@ func main() {
 	<-quit
 	log.Println("Stopping server...")
 
+	// 释放资源
+	initializer.App.SubPubRabbitMQ.Close()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	//
 
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatal("Shutdown server error: ", err)

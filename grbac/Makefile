@@ -10,8 +10,12 @@ down:
 serve:
 	go run ./cmd/server/*.go
 
+## mailer: 启动发送邮件服务
+mailer: 
+	go run ./cmd/mailer/*.go
+
 ## doc: swag init
 doc:
 	swag init
 
-.PHONY: up down run doc
+.PHONY: up down serve mailer doc 

@@ -13,6 +13,16 @@ import (
 
 // ToResponse 请求成功响应的处理
 func ToResponse(c *gin.Context, data interface{}) {
+	msg, ok := data.(string)
+	if ok {
+		c.JSON(http.StatusOK, gin.H{
+			"code": errs.StatusOK.Code(),
+			"msg":  msg,
+			"data": nil,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"code": errs.StatusOK.Code(),
 		"msg":  errs.StatusOK.Message(),

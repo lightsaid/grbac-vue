@@ -2,7 +2,9 @@ package models
 
 import (
 	"bytes"
+	"encoding/json"
 	"html/template"
+	"log"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -66,4 +68,17 @@ type LoginRequest struct {
 
 type ActivateUserRequest struct {
 	VerifyCode string `uri:"verifyCode" binding:"required"`
+}
+
+type RegisterMailerPaylod struct {
+	Email   string `json:"email"`
+	Content string `json:"content"`
+}
+
+func (r *RegisterMailerPaylod) String() string {
+	b, err := json.Marshal(r)
+	if err != nil {
+		log.Println(err)
+	}
+	return string(b)
 }
