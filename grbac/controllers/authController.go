@@ -113,7 +113,37 @@ func ActivateUser(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
+	var req models.LoginRequest
+	if ok := helper.BindRequest(c, &req); !ok {
+		return
+	}
 
+	// 查询用户
+	var user models.User
+	if err := initializer.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		e := helper.HandleMySQLError(c, err)
+		helper.ToErrResponse(c, e)
+		return
+	}
+	// 匹配密码
+	if err := user.ComparePassword(req.Password); err != nil {
+		helper.ToErrResponse(c, errs.BadRequest.AsException(err, "账户或密码不匹配"))
+		return
+	}
+
+	// 生成access_token 和 refresh_token
+	access_token, err := helper.GenToken(
+		user.ID, initializer.App.Conf.TokenSecret, initializer.App.Conf.AccessTokenDuration)
+	refresh_token, err2 := helper.GenToken(
+		user.ID, initializer.App.Conf.TokenSecret, initializer.App.Conf.RefreshTokenDuration)
+
+	if err != nil || err2 != nil {
+		helper.ToErrResponse(c, errs.BadRequest.AsException(err, "生成Token失败"))
+		return
+	}
+
+	rsp := models.LoginResponse{User: user, AccessToken: access_token, RefreshToken: refresh_token}
+	helper.ToResponse(c, rsp)
 }
 
 func Logout(c *gin.Context) {

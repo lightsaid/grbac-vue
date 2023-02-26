@@ -14,14 +14,14 @@ type JwtPayload struct {
 }
 
 // GenToken 生成 JWT Token
-func GenToken(uid uint, secretKey string) (string, error) {
+func GenToken(uid uint, secretKey string, d time.Duration) (string, error) {
 	payload := &JwtPayload{
 		uid,
 		jwt.RegisteredClaims{
 			Issuer:    "grbac",
 			Subject:   "",
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(d)),
 		},
 	}
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
