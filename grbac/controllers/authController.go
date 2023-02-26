@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lightsaid/grbac/errs"
 	"github.com/lightsaid/grbac/helper"
 	"github.com/lightsaid/grbac/initializer"
+	"github.com/lightsaid/grbac/mailer"
 	"github.com/lightsaid/grbac/models"
 )
 
@@ -19,9 +22,18 @@ func Register(c *gin.Context) {
 	if ok := helper.BindRequest(c, &req); !ok {
 		return
 	}
+
+	// 生成签名
+	signed := helper.CreateSignature(req.Email)
+
 	user := models.User{
-		Name:  req.Name,
-		Email: req.Email,
+		Name:       req.Name,
+		Email:      req.Email,
+		VerifyCode: signed,
+	}
+
+	if initializer.App.Conf.RunMode == "release" {
+		// TODO: 验证邮箱host是否能访问
 	}
 	err := user.SetPassword(req.Password)
 	if err != nil {
@@ -35,12 +47,50 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// TODO:
+	// 发送邮件
+	sender := mailer.NewGmailSender(
+		initializer.App.Conf.MailSenderName,
+		initializer.App.Conf.MailSenderAddress,
+		initializer.App.Conf.MailSenderPassword,
+	)
+
+	href := fmt.Sprintf("%s/%s", initializer.App.Conf.ActivateEmailURL, signed)
+
+	// 创建邮件模版
+	content, err := user.SetActivateEmailMessage(href)
+	if err != nil {
+		helper.ToErrResponse(c, errs.InternalServerError.AsException(err))
+		return
+	}
+	err = sender.SendEmail(
+		"账户激活",
+		content,
+		[]string{user.Email},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		helper.ToErrResponse(c, errs.InternalServerError.AsException(err))
+		return
+	}
+
 	helper.ToResponse(c, user)
 }
 
 func ActivateUser(c *gin.Context) {
+	var req models.ActivateUserRequest
+	if ok := helper.BindRequestUri(c, &req); !ok {
+		return
+	}
+	var user models.User
+	if err := initializer.DB.Where("verify_code = ?", req.VerifyCode).First(&user).Error; err != nil {
+		e := helper.HandleMySQLError(c, err)
+		helper.ToErrResponse(c, e.AsMessage("激活失败，查询用户错误"))
+		return
+	}
 
+	helper.ToResponse(c, errs.StatusOK.AsMessage("激活成功"))
 }
 
 func Login(c *gin.Context) {

@@ -1,9 +1,15 @@
 package models
 
 import (
+	"bytes"
+	"html/template"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	ActivateEmailTemplatePath = "./views/activate.mailer.tmpl"
 )
 
 type User struct {
@@ -14,6 +20,7 @@ type User struct {
 	Avatar      string     `json:"avatar" gorm:"type:varchar(255)"`
 	UserType    uint8      `json:"user_type" gorm:"type:tinyint;not null;default:1;index,comment '1表示普通用户, 2表示管理员'"`
 	ActivatedAt *time.Time `json:"activated"`
+	VerifyCode  string     `json:"verify_code"`
 	*BaseModel
 }
 
@@ -30,6 +37,21 @@ func (user *User) ComparePassword(password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 }
 
+func (user *User) SetActivateEmailMessage(activateEmailURL string) (string, error) {
+	t, err := template.ParseFiles(ActivateEmailTemplatePath)
+	if err != nil {
+		return "", err
+	}
+
+	// 解析邮箱模板
+	var buf bytes.Buffer
+	err = t.Execute(&buf, struct{ Href string }{Href: activateEmailURL})
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
 type RegisterRequest struct {
 	Name            string `json:"name" zh:"用户名" binding:"required,min=2,max=32"`
 	Email           string `json:"email" zh:"邮箱地址" binding:"required,email"`
@@ -40,4 +62,8 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email"  binding:"required,email"`
 	Password string `json:"password"  binding:"required,min=8,max=32"`
+}
+
+type ActivateUserRequest struct {
+	VerifyCode string `uri:"verifyCode" binding:"required"`
 }
