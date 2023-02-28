@@ -30,6 +30,9 @@ func main() {
 	failOnError(err, "initializer.AutoMigrate()")
 	err = initializer.InitValidator()
 	failOnError(err, "initializer.InitValidator()")
+
+	initializer.InitRedis()
+
 	gin.SetMode(initializer.App.Conf.RunMode)
 	engine := gin.Default()
 	routers.SetupRoutes(engine)

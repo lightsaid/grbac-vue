@@ -22,7 +22,7 @@ type User struct {
 	Avatar      string     `json:"avatar" gorm:"type:varchar(255)"`
 	UserType    uint8      `json:"user_type" gorm:"type:tinyint;not null;default:1;index,comment '1表示普通用户, 2表示管理员'"`
 	ActivatedAt *time.Time `json:"activated"`
-	VerifyCode  string     `json:"verify_code"`
+	VerifyCode  string     `json:"-"`
 	*BaseModel
 }
 
@@ -87,4 +87,27 @@ func (r *RegisterMailerPaylod) String() string {
 		log.Println(err)
 	}
 	return string(b)
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type UpdateProfileRequest struct {
+	Name   string `json:"name" binding:"required"`
+	Avatar string `json:"avatar" binding:"required"`
+}
+
+// 分页
+type Pagination struct {
+	Page int `form:"page" binding:"required"`
+	Size int `form:"size" binding:"required"`
+}
+
+func (p *Pagination) Offset() int {
+	return (p.Page - 1) * p.Size
+}
+
+func (p *Pagination) Limit() int {
+	return p.Size
 }

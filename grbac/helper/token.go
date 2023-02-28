@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 )
 
 // JwtPayload JWT Token 附带的数据
@@ -14,10 +15,16 @@ type JwtPayload struct {
 }
 
 // GenToken 生成 JWT Token
-func GenToken(uid uint, secretKey string, d time.Duration) (string, error) {
+func GenToken(uid uint, secretKey string, d time.Duration) (string, *JwtPayload, error) {
+	tokenID, err := uuid.NewRandom()
+	if err != nil {
+		return "", nil, err
+	}
 	payload := &JwtPayload{
 		uid,
 		jwt.RegisteredClaims{
+			// 唯一
+			ID:        tokenID.String(),
 			Issuer:    "grbac",
 			Subject:   "",
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -25,7 +32,9 @@ func GenToken(uid uint, secretKey string, d time.Duration) (string, error) {
 		},
 	}
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-	return claims.SignedString([]byte(secretKey))
+	tokenString, err := claims.SignedString([]byte(secretKey))
+
+	return tokenString, payload, err
 }
 
 // 验证、解析 JWT Token

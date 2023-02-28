@@ -12,20 +12,14 @@ import (
 )
 
 // ToResponse 请求成功响应的处理
-func ToResponse(c *gin.Context, data interface{}) {
-	msg, ok := data.(string)
-	if ok {
-		c.JSON(http.StatusOK, gin.H{
-			"code": errs.StatusOK.Code(),
-			"msg":  msg,
-			"data": nil,
-		})
-		return
+func ToResponse(c *gin.Context, data interface{}, msgs ...string) {
+	msg := errs.StatusOK.Message()
+	if len(msgs) > 0 {
+		msg = msgs[0]
 	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"code": errs.StatusOK.Code(),
-		"msg":  errs.StatusOK.Message(),
+		"msg":  msg,
 		"data": data,
 	})
 }
@@ -45,7 +39,7 @@ func ToErrResponse(c *gin.Context, err *errs.AppError) {
 
 // BindRequest 如果正常绑定返回true；反之处理错误并返回false 并对请求作出响应的错误处理
 func BindRequest(c *gin.Context, req interface{}) bool {
-	if err := c.ShouldBindJSON(req); err != nil {
+	if err := c.ShouldBind(req); err != nil {
 		return handleError(c, err)
 	}
 

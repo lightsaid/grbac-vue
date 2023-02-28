@@ -1,14 +1,22 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/lightsaid/grbac/errs"
 	"github.com/lightsaid/grbac/helper"
 	"github.com/lightsaid/grbac/initializer"
 	"github.com/lightsaid/grbac/models"
+)
+
+const (
+	// Session 存储redis的基础可以，一个完整的key是：
+	// fmt.Sprintf("%s%s%d", initializer.App.Conf.RedisPrefixKey, SessionBaseKey, user.ID)
+	SessionBaseKey = "session#"
 )
 
 // Register godoc
@@ -83,7 +91,7 @@ func Register(c *gin.Context) {
 	// 	return
 	// }
 
-	helper.ToResponse(c, "注册成功，请注意查收邮件激活用户")
+	helper.ToResponse(c, nil, "注册成功，请注意查收邮件激活用户")
 }
 
 func ActivateUser(c *gin.Context) {
@@ -132,9 +140,10 @@ func Login(c *gin.Context) {
 	}
 
 	// 生成access_token 和 refresh_token
-	access_token, err := helper.GenToken(
+	accessToken, _, err := helper.GenToken(
 		user.ID, initializer.App.Conf.TokenSecret, initializer.App.Conf.AccessTokenDuration)
-	refresh_token, err2 := helper.GenToken(
+
+	refreshToken, payload, err2 := helper.GenToken(
 		user.ID, initializer.App.Conf.TokenSecret, initializer.App.Conf.RefreshTokenDuration)
 
 	if err != nil || err2 != nil {
@@ -142,22 +151,77 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	rsp := models.LoginResponse{User: user, AccessToken: access_token, RefreshToken: refresh_token}
+	// 设置 session
+	session := models.Session{
+		TID:          payload.ID,
+		UID:          user.ID,
+		RefreshToken: refreshToken,
+		CreatedAt:    time.Now(),
+		ExpiresAt:    time.Now().Add(initializer.App.Conf.RefreshTokenDuration),
+		UserAgent:    c.Request.UserAgent(),
+		ClientIP:     c.ClientIP(),
+	}
+	key := fmt.Sprintf("%s%s%d", initializer.App.Conf.RedisPrefixKey, SessionBaseKey, user.ID)
+
+	// 存储 session
+	err = session.Save(initializer.RedisPool, key)
+	if err != nil {
+		helper.ToErrResponse(c, errs.InternalServerError.AsException(err))
+		return
+	}
+
+	rsp := models.LoginResponse{User: user, AccessToken: accessToken, RefreshToken: refreshToken}
 	helper.ToResponse(c, rsp)
 }
 
-func Logout(c *gin.Context) {
-
-}
-
 func Refresh(c *gin.Context) {
+	var req models.RefreshRequest
+	if ok := helper.BindRequest(c, &req); !ok {
+		return
+	}
+	payload, err := helper.ParseToken(req.RefreshToken, initializer.App.Conf.TokenSecret)
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			helper.ToErrResponse(c, errs.BadRequest.AsException(err, "token 过期"))
+			return
+		}
+		fmt.Println("err2: ", err)
+		helper.ToErrResponse(c, errs.BadRequest.AsException(err))
+		return
+	}
+	var session models.Session
+	key := fmt.Sprintf("%s%s%d", initializer.App.Conf.RedisPrefixKey, SessionBaseKey, payload.UserID)
+	err = session.Get(initializer.RedisPool, key)
+	if err != nil {
+		if err == models.ErrSessionNotFound {
+			helper.ToErrResponse(c, errs.NotFound)
+			return
+		}
+		helper.ToErrResponse(c, errs.InternalServerError.AsException(err))
+		return
+	}
 
+	// 查找成功，refreshToken 在redis中还没过期
+
+	if payload.UserID != session.UID || payload.ID != session.TID || req.RefreshToken != session.RefreshToken {
+		helper.ToErrResponse(c, errs.Unauthorized)
+		return
+	}
+
+	// 生成 refresh TOken
+	refreshToken, _, err := helper.GenToken(session.UID, initializer.App.Conf.TokenSecret, initializer.App.Conf.RefreshTokenDuration)
+	if err != nil {
+		helper.ToResponse(c, errs.InternalServerError.AsException(err))
+		return
+	}
+
+	helper.ToResponse(c, refreshToken, "成功")
 }
 
 func ForgotPswd(c *gin.Context) {
-
+	// TODO: 后面有时间再处理
 }
 
 func RestPswd(c *gin.Context) {
-
+	// TODO: 后面有时间再处理
 }

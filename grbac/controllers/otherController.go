@@ -15,3 +15,8 @@ func CheckHealth(c *gin.Context) {
 func SendGoMail(c *gin.Context) {
 
 }
+
+// UploadFiles 上传文件
+func UploadFiles(c *gin.Context) {
+	// c.Request.ParseMultipartForm()
+}
