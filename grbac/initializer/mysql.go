@@ -35,6 +35,6 @@ func InitMySQL() {
 
 // AutoMigrate 自动迁移表
 func AutoMigrate() error {
-	err := DB.AutoMigrate(models.User{})
+	err := DB.AutoMigrate(&models.User{}, &models.Role{}, &models.Permission{})
 	return err
 }

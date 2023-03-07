@@ -2,9 +2,7 @@ package models
 
 import (
 	"bytes"
-	"encoding/json"
 	"html/template"
-	"log"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,6 +21,7 @@ type User struct {
 	UserType    uint8      `json:"user_type" gorm:"type:tinyint;not null;default:1;index,comment '1表示普通用户, 2表示管理员'"`
 	ActivatedAt *time.Time `json:"activated"`
 	VerifyCode  string     `json:"-"`
+	Roles       []*Role    `gorm:"many2many:user_roles"`
 	*BaseModel
 }
 
@@ -52,62 +51,4 @@ func (user *User) SetActivateEmailMessage(activateEmailURL string) (string, erro
 		return "", err
 	}
 	return buf.String(), nil
-}
-
-type RegisterRequest struct {
-	Name            string `json:"name" zh:"用户名" binding:"required,min=2,max=32"`
-	Email           string `json:"email" zh:"邮箱地址" binding:"required,email"`
-	Password        string `json:"password" binding:"required,min=6,max=32"`
-	PasswordConfirm string `json:"password_confirm" binding:"required,eqfield=Password"`
-}
-
-type LoginRequest struct {
-	Email    string `json:"email"  binding:"required,email"`
-	Password string `json:"password"  binding:"required,min=6,max=32"`
-}
-
-type LoginResponse struct {
-	User
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-}
-
-type ActivateUserRequest struct {
-	VerifyCode string `uri:"verifyCode" binding:"required"`
-}
-
-type RegisterMailerPaylod struct {
-	Email   string `json:"email"`
-	Content string `json:"content"`
-}
-
-func (r *RegisterMailerPaylod) String() string {
-	b, err := json.Marshal(r)
-	if err != nil {
-		log.Println(err)
-	}
-	return string(b)
-}
-
-type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
-}
-
-type UpdateProfileRequest struct {
-	Name   string `json:"name" binding:"required"`
-	Avatar string `json:"avatar" binding:"required"`
-}
-
-// 分页
-type Pagination struct {
-	Page int `form:"page" binding:"required"`
-	Size int `form:"size" binding:"required"`
-}
-
-func (p *Pagination) Offset() int {
-	return (p.Page - 1) * p.Size
-}
-
-func (p *Pagination) Limit() int {
-	return p.Size
 }

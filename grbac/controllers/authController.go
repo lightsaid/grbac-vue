@@ -217,11 +217,3 @@ func Refresh(c *gin.Context) {
 
 	helper.ToResponse(c, refreshToken, "成功")
 }
-
-func ForgotPswd(c *gin.Context) {
-	// TODO: 后面有时间再处理
-}
-
-func RestPswd(c *gin.Context) {
-	// TODO: 后面有时间再处理
-}

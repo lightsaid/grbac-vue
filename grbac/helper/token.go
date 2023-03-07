@@ -46,6 +46,7 @@ func ParseToken(tokenStr string, secretKey string) (*JwtPayload, error) {
 		return nil, err
 	}
 	if claims, ok := token.Claims.(*JwtPayload); ok && token.Valid {
+		// fmt.Println(">>> ", claims.ExpiresAt.Time.Format("2006-01-02 15:04:05"))
 		return claims, nil
 	} else {
 		return nil, errors.New("invalid token")
