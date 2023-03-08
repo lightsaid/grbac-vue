@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  mysql:
+    image: "mysql:5.7.22"
+    ports:
+      - "3399:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "dddgo123"
+      MYSQL_DATABASE: "dddgo"
+      MYSQL_PASSWORD: "dddgo123"
+    volumes:
+      - ./storage/database:/var/lib/mysql/
+
+  redis:
+    image: redis:6.2.8
+    restart: always
+    ports:
+      - "6399:6379"
+    volumes:
+      - ./storage/dbcache:/data
+
+  rabbitmq:
+    image: "rabbitmq:3.11.9-management-alpine"
+    container_name: grbac_rabbitmq
+    ports:
+      - "5666:5672"
+      - "15666:15672"
+    volumes:
+      - ./storage/rabbitmq/:/var/lib/rabbitmq/
